@@ -8,7 +8,7 @@ virtualenv redis-to-cluster
 source redis-to-cluster/bin/activate
 pip install -r requirments.txt
 python redis-to-cluster.py -h
-python redis-to-cluster.py <server>:<port>/<numeric DB #> <cluster>:<port>
+python redis-to-cluster.py <server>:<port>/<numeric DB #> <cluster>:<port>/0
 ```
 
 # Credit
