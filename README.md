@@ -1,5 +1,16 @@
 # redis-to-cluster
-Simple script to migrate Redis database key data to Redis (or Elasticache) in cluster mode.
+A simple script to migrate Redis database key data to Redis (or Elasticache) in cluster mode. 
+
+Supports:
+- Reids
+- Redis Cluster Mode
+- SSL (aka rediss://)
+- AUTH passwords
+
+# Redis URLs
+You must format your URL appropriately, per http://www.iana.org/assignments/uri-schemes/prov/redis
+
+format = '<schema>://(:password)@<host>:<port>/(db) (exclude db number for cluster mode)'
 
 # How to use
 ```
@@ -8,7 +19,7 @@ virtualenv redis-to-cluster
 source redis-to-cluster/bin/activate
 pip install -r requirments.txt
 python redis-to-cluster.py -h
-python redis-to-cluster.py <server>:<port>/<numeric DB #> <cluster>:<port>/0
+python redis-to-cluster.py -s redis://<redis_hostname>:6379/0 -d rediss://(:password)@<redis_cluster>:6379/
 ```
 
 # Credit
