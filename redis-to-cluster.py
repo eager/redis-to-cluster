@@ -63,20 +63,52 @@ def conn_string_type(string):
 def migrate_redis(source, destination):
     src = connect_to_redis(source)
     dst = connect_to_redis(destination)
+    src_pipeline = src.pipeline()
+    src_dbsize = src.dbsize()
+    dst_pipeline = dst.pipeline()
+    dst_keys = []
+    pipeline_count = 0
+
+    if not quiet: print "INFO: Migrating %s keys from source" % src_dbsize
     for key in src.keys('*'):
-        ttl = src.ttl(key)
-        # we handle TTL command returning -1 (no expire) or -2 (no key)
-        if ttl < 0:
-            ttl = 0
-        if not quiet: print "Dumping key: %s" % key
-        value = src.dump(key)
-        if not quiet: print "Restoring key: %s" % key
-        try:
-            dst.restore(key, ttl * 1000, value, replace=True)
-        except rediscluster.exceptions.ResponseError as e:
-            print "WARN: Failed to restore key: %s" % key
-            print ("Error: " + str(e))
-            pass
+        #ttl = src.ttl(key)
+        ## we handle TTL command returning -1 (no expire) or -2 (no key)
+        #if ttl < 0:
+        #    ttl = 0
+        # make verbose # if not quiet: print "Adding key to dump pipeline: %s" % key
+        if pipeline_count == 100000 or src_dbsize == 0:
+            if not quiet: print "\nINFO: Adding dumps to restore pipeline...\n"
+            dst_values = src_pipeline.execute()
+
+            dst_dict = dict(zip(dst_keys, dst_values))
+            for for_key in dst_dict:
+                #dst.restore(key, ttl * 1000, value, replace=True)
+                dst_pipeline.restore(for_key, 0, dst_dict[for_key], replace=True)
+
+            if not quiet: print "\nINFO: Restoring keys... (This may take some time)\n"
+            try:
+                results = dst_pipeline.execute()
+            except rediscluster.exceptions.ResponseError as e:
+                print "WARN: Failed to restore keys:"
+                print ("Error result: " + str(e))
+                pass
+            #print("Results: ", results)
+            if not quiet: print "\nINFO: %s keys remaining to transfer\n" % src_dbsize
+            # Clean up here
+            src_pipeline.reset()
+            dst_pipeline.reset()
+            pipeline_count = 0
+            dst_keys = []
+
+        else:
+            dst_keys.append(key)
+            #value = src.dump(key)
+            src_pipeline.dump(key)
+            #src_pipeline.ttl(key)
+            pipeline_count += 1
+            src_dbsize -= 1
+
+
     return
 
 def run():
