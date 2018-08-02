@@ -69,10 +69,10 @@ def migrate_redis(source, destination):
         if ttl < 0:
             ttl = 0
         if not quiet: print "Dumping key: %s" % key
-        value = src.get(key)
+        value = src.dump(key)
         if not quiet: print "Restoring key: %s" % key
         try:
-            dst.set(key, value, ex=ttl)
+            dst.restore(key, ttl * 1000, value, replace=True)
         except rediscluster.exceptions.ResponseError as e:
             print "WARN: Failed to restore key: %s" % key
             print ("Error: " + str(e))
