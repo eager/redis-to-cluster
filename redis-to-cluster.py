@@ -5,6 +5,7 @@ import redis
 import rediscluster
 
 quiet = False # verbose unless quiet logging global
+replace = False # Replace keys global
 
 def connect_redis(kwargs):
     if kwargs['password'] is None: kwargs.pop('password')
@@ -63,27 +64,39 @@ def conn_string_type(string):
 def migrate_redis(source, destination):
     src = connect_to_redis(source)
     dst = connect_to_redis(destination)
-    src_pipeline = src.pipeline()
+    src_dump_pipeline = src.pipeline()
+    src_ttl_pipeline = src.pipeline()
     src_dbsize = src.dbsize()
     dst_pipeline = dst.pipeline()
     dst_keys = []
     pipeline_count = 0
 
     if not quiet: print "INFO: Migrating %s keys from source" % src_dbsize
-    for key in src.keys('*'):
-        #ttl = src.ttl(key)
-        ## we handle TTL command returning -1 (no expire) or -2 (no key)
-        #if ttl < 0:
-        #    ttl = 0
-        # make verbose # if not quiet: print "Adding key to dump pipeline: %s" % key
-        if pipeline_count == 100000 or src_dbsize == 0:
-            if not quiet: print "\nINFO: Adding dumps to restore pipeline...\n"
-            dst_values = src_pipeline.execute()
 
-            dst_dict = dict(zip(dst_keys, dst_values))
-            for for_key in dst_dict:
+    src_keys = src.keys('*')
+    for key in src_keys:
+        # make verbose # if not quiet: print "Adding key to dump pipeline: %s" % key
+        if src_dbsize < 100: print('pipeline_count vs src_dbsize', pipeline_count, src_dbsize)
+        if pipeline_count == 100000 or src_dbsize == 1:
+            dst_keys.append(key)
+            src_dump_pipeline.dump(key)
+            src_ttl_pipeline.pttl(key)
+            pipeline_count += 1
+            src_dbsize -= 1
+
+            if not quiet: print "\nINFO: Adding dumps to restore pipeline...\n"
+            dst_values = src_dump_pipeline.execute()
+            dst_ttl = src_ttl_pipeline.execute()
+
+            dst_values_dict = dict(zip(dst_keys, dst_values))
+            dst_ttl_dict = dict(zip(dst_keys, dst_ttl))
+            for for_key in dst_values_dict:
                 #dst.restore(key, ttl * 1000, value, replace=True)
-                dst_pipeline.restore(for_key, 0, dst_dict[for_key], replace=True)
+                if dst_ttl_dict[for_key] < 0: dst_ttl_dict[for_key] = 0 # TTL must be 0 (no TTL)
+                dst_pipeline.restore(for_key,
+                                     int(dst_ttl_dict[for_key]),
+                                     dst_values_dict[for_key],
+                                     replace=replace)
 
             if not quiet: print "\nINFO: Restoring keys... (This may take some time)\n"
             try:
@@ -92,10 +105,10 @@ def migrate_redis(source, destination):
                 print "WARN: Failed to restore keys:"
                 print ("Error result: " + str(e))
                 pass
-            #print("Results: ", results)
             if not quiet: print "\nINFO: %s keys remaining to transfer\n" % src_dbsize
             # Clean up here
-            src_pipeline.reset()
+            src_dump_pipeline.reset()
+            src_ttl_pipeline.reset()
             dst_pipeline.reset()
             pipeline_count = 0
             dst_keys = []
@@ -103,8 +116,9 @@ def migrate_redis(source, destination):
         else:
             dst_keys.append(key)
             #value = src.dump(key)
-            src_pipeline.dump(key)
-            #src_pipeline.ttl(key)
+            src_dump_pipeline.dump(key)
+            src_ttl_pipeline.pttl(key)
+            #src_dump_pipeline.ttl(key)
             pipeline_count += 1
             src_dbsize -= 1
 
@@ -117,10 +131,13 @@ def run():
     parser.add_argument('--source', '-s', required=True, help="source Redis server / cluster")
     parser.add_argument('--destination', '-d', required=True, help="designation Redis server / cluster")
     parser.add_argument("--quiet", "-q", action="store_true", help="do not print name of keys copied, only errors")
+    parser.add_argument("--replace", "-r", action="store_true", help="replace keys already existing on destination")
     options = parser.parse_args()
 
     global quiet
     quiet = options.quiet
+    global replace
+    replace = options.replace
 
     migrate_redis(conn_string_type(options.source), conn_string_type(options.destination))
 
