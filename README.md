@@ -10,7 +10,7 @@ Supports:
 # Redis URLs
 You must format your URL appropriately, per http://www.iana.org/assignments/uri-schemes/prov/redis
 
-format = '<schema>://(:password)@<host>:<port>/(db) (exclude db number for cluster mode)'
+format = `<schema>://(:password)@<host>:<port>/(db) (exclude db number for cluster mode)`
 
 # How to use
 ```
