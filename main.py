@@ -121,7 +121,7 @@ class Logger:
 
 @pytool.lang.singleton
 class Metrics:
-    def __init__(self, prefix, total, frequency=1000):
+    def __init__(self, prefix, total, frequency=10000):
         self.prefix = prefix
         self.total = total
         self.frequency = frequency
@@ -143,7 +143,7 @@ class Metrics:
 
     def output_stats(self):
         """ Prints stats to logging. """
-        elapsed = self.timer.elapsed
+        elapsed = self.timer.elapsed.total_seconds()
         count = self.copied + self.errored
         total = self.total
         # Time per key in milliseconds
@@ -196,12 +196,12 @@ class Worker(threading.Thread):
 
         # -2 means the key doesn't actually exist and is a lie
         if ttl == -2:
-            self.log.debug(f"TTL -2: {key}")
+            # self.log.debug(f"TTL -2: {key}")
             return
 
         # -1 means the key has no expiration and we set it to 90 days
         if ttl == -1:
-            self.log.debug(f"TTL -1: {key}")
+            # self.log.debug(f"TTL -1: {key}")
             ttl = 60*60*24*90
 
         # restore uses TTL in ms
@@ -228,35 +228,42 @@ class Migrate:
         self.overwrite = overwrite
         self.queue = queue.Queue()
         self.log = Logger()
+        self.src_keys = set()
+        self.dest_keys = set()
 
     def run(self):
         self.log.info("Starting migration.")
 
         # Get all the keys and store them
         timer = pytool.time.Timer()
-        self.src_keys = self.src.keys(self.prefix)
-        self.log.info(f"Retrieve source keys: {timer.mark()}s")
 
-        timer = pytool.time.Timer()
-        self.dest_keys = self.dest.keys(self.prefix)
-        self.log.info(f"Retrieve destination keys: {timer.mark()}s")
+        # Retrieve source keys in a thread for parallelism
+        get_src = threading.Thread(target=self.get_src_keys)
+        get_src.start()
 
-        self.log.info(f"Time to retrieve keys: {timer.elapsed}s")
+        if not self.overwrite:
+            # Retrieve destination keys in a Thread
+            get_dest = threading.Thread(target=self.get_dest_keys)
+            get_dest.start()
+            get_dest.join()
+
+        # Wait for source retrieval to finish
+        get_src.join()
+
+        self.log.info(f"Time to retrieve keys: {timer.elapsed}")
 
         # Find the difference in the destination keys
-        if not self.ovewrite:
-            timer.mark()
-            self.keys = set(self.src_keys) - set(self.dest_keys)
-            self.log.info(f"Time to compute set: {timer.mark()}s")
-        else:
-            self.keys = set(self.src_keys)
+        timer.mark()
+        self.keys = set(self.src_keys) - set(self.dest_keys)
+        self.log.debug(f"Time to compute set: {timer.mark()}")
         self.log.info(f"Keys to process: {len(self.keys)}")
 
         # Populate the threadsafe queue with keys
         for key in self.keys:
             self.queue.put(key)
 
-        self.log.info(f"Time to populate queue: {timer.mark()}s")
+        self.log.debug(f"Time to populate queue: {timer.mark()}")
+        self.log.info(f"Keys in queue: {len(self.queue)}")
 
         # Create metrics
         self.metrics = Metrics(self.prefix, len(self.keys))
@@ -266,7 +273,7 @@ class Migrate:
         self.log.debug(f"Creating {self.workers} workers.")
         self.pool = [Worker(self.queue, self.src, self.dest, self.log)
                      for i in range(self.workers)]
-        self.log.info(f"Time to create workers: {timer.mark()}s")
+        self.log.info(f"Time to create workers: {timer.mark()}")
 
         # Start all the worker threads
         for worker in self.pool:
@@ -276,8 +283,23 @@ class Migrate:
         for worker in self.pool:
             worker.join()
 
-        self.log.info("Copy time: {timer.mark()}s")
-        self.log.info("Total time taken: {timer.elapsed}s")
+        self.log.info(f"Copy time: {timer.mark()}")
+        self.log.info(f"Total time taken: {timer.elapsed}")
+        self.log.info(f"Total keys migraterd: {len(self.keys)}")
+
+    def get_src_keys(self):
+        """ Populate the src keys from a thread. """
+        timer = pytool.time.Timer()
+        self.src_keys = self.src.keys(self.prefix)
+        self.log.info(f"Retrieve source keys: {timer.elapsed}")
+        self.log.info(f"Found {len(self.src_keys)} source keys.")
+
+    def get_dest_keys(self):
+        """ Populate the destination keys from a thread. """
+        timer = pytool.time.Timer()
+        self.dest_keys = self.dest.keys(self.prefix)
+        self.log.info(f"Retrieve destination keys: {timer.elapsed}")
+        self.log.info(f"Found {len(self.src_keys)} destination keys.")
 
     @property
     def src(self):
@@ -298,7 +320,7 @@ class Migrate:
             return self._dest
 
         # Parse and create a new client
-        conn = parse_url(self.source_url)
+        conn = parse_url(self.dest_url)
         client = get_client(conn)
         self._dest = client
         return self._dest
@@ -326,10 +348,15 @@ class Main(pytool.cmd.Command):
                           self.args.logfile)
         self.log.debug("Logging configured successfully.")
 
+        self.log.info(f"Using prefix: {self.args.prefix}")
+
         migrate = Migrate(self.args.prefix, self.args.source,
                           self.args.destination, self.args.workers,
                           self.args.overwrite)
-        self.log.debug("Created migration runner.")
+        self.log.debug(f"Created migration runner.\n"
+                       f"prefix = {self.args.prefix}\n"
+                       f"workers = {self.args.workers}\n"
+                       f"overwrite = {self.args.overwrite}")
         migrate.run()
 
 
