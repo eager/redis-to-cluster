@@ -90,14 +90,22 @@ def migrate_redis(source, destination):
         count += 1
         ttl = src.ttl(key)
 
-        # we handle TTL command returning -1 (no expire) or -2 (no key)
-        if ttl < 0:
-            ttl = 0
+        # -2 means the key doesn't actually exist and is a lie
+        if ttl == -2:
+            continue
+
+        # -1 means the key has no expiration and we set it to 90 days
+        if ttl == -1:
+            ttl = 60*60*24*90
+
+        # restore uses TTL in ms
+        ttl = ttl * 1000
+
         debug("Dumping key: %s" % key)
         value = src.dump(key)
         debug("Restoring key: %s" % key)
         try:
-            dst.restore(key, ttl * 1000, value, replace=True)
+            dst.restore(key, ttl, value, replace=True)
             count += 1
         except rediscluster.exceptions.ResponseError as e:
             errors += 1
