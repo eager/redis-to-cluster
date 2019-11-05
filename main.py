@@ -290,6 +290,7 @@ class Migrate:
     def get_src_keys(self):
         """ Populate the src keys from a thread. """
         timer = pytool.time.Timer()
+        self.log.info("Querying source keys.")
         self.src_keys = self.src.keys(self.prefix)
         self.log.info(f"Retrieve source keys: {timer.elapsed}")
         self.log.info(f"Found {len(self.src_keys)} source keys.")
@@ -297,6 +298,7 @@ class Migrate:
     def get_dest_keys(self):
         """ Populate the destination keys from a thread. """
         timer = pytool.time.Timer()
+        self.log.info("Querying destination keys.")
         self.dest_keys = self.dest.keys(self.prefix)
         self.log.info(f"Retrieve destination keys: {timer.elapsed}")
         self.log.info(f"Found {len(self.dest_keys)} destination keys.")
