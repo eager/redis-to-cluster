@@ -212,7 +212,7 @@ class Worker(threading.Thread):
         value = self.src.dump(key)
 
         # Set the key on our destination
-        self.dst.restore(key, ttl, value, replace=True)
+        self.dest.restore(key, ttl, value, replace=True)
 
 
 class Migrate:
