@@ -3,6 +3,7 @@ import sys
 import argparse
 
 import redis
+import pytool
 import rediscluster
 
 
@@ -81,8 +82,14 @@ def conn_string_type(string):
 def migrate_redis(source, destination):
     src = connect_to_redis(source)
     dst = connect_to_redis(destination)
+
+    timer = pytool.time.Timer()
+    count = 0
+    errors = 0
     for key in src.keys('*'):
+        count += 1
         ttl = src.ttl(key)
+
         # we handle TTL command returning -1 (no expire) or -2 (no key)
         if ttl < 0:
             ttl = 0
@@ -91,10 +98,14 @@ def migrate_redis(source, destination):
         debug("Restoring key: %s" % key)
         try:
             dst.restore(key, ttl * 1000, value, replace=True)
+            count += 1
         except rediscluster.exceptions.ResponseError as e:
+            errors += 1
             print("WARN: Failed to restore key: %s" % key)
             print("Error: " + str(e))
             pass
+        if not count % 1000:
+            print(f"Count: {count} Timer: {timer.elapsed}s")
     return
 
 
