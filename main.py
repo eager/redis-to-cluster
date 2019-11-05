@@ -281,6 +281,8 @@ class Migrate:
         for worker in self.pool:
             worker.start()
 
+        self.log.info(f"Startup time: {timer.elapsed}")
+
         # Wait for workers to finish
         self.log.info("Processing.")
         for worker in self.pool:
@@ -339,7 +341,8 @@ class Main(pytool.cmd.Command):
                  "cluster")
         self.opt('--destination', '-d', required=True, help="destination "
                  "Redis server / cluster")
-        self.opt('--workers', '-w', default=10, help="Number of workers")
+        self.opt('--workers', '-w', type=int, default=10,
+                 help="Number of workers")
         self.opt('--logging', '-l', default='info',
                  choices=['debug', 'info', 'error'],
                  help="Set log level")
