@@ -80,14 +80,14 @@ def conn_string_type(string):
             'db': db}
 
 
-def migrate_redis(source, destination):
+def migrate_redis(prefix, source, destination):
     src = connect_to_redis(source)
     dst = connect_to_redis(destination)
 
     timer = pytool.time.Timer()
     count = 0
     errors = 0
-    for key in src.keys('*'):
+    for key in src.keys(prefix):
         count += 1
         ttl = src.ttl(key)
 
@@ -129,12 +129,14 @@ def run():
                         help="designation Redis server / cluster")
     parser.add_argument("--quiet", "-q", action="store_true", help="do not "
                         "print name of keys copied, only errors")
+    parser.add_argument('--prefix', '-p', default="*",
+                        help="designation Redis server / cluster")
     options = parser.parse_args()
 
     global quiet
     quiet = options.quiet
 
-    migrate_redis(conn_string_type(options.source),
+    migrate_redis(options.prefix, conn_string_type(options.source),
                   conn_string_type(options.destination))
 
 
