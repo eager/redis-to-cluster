@@ -105,7 +105,8 @@ def migrate_redis(source, destination):
             print("Error: " + str(e))
             pass
         if not count % 1000:
-            print(f"Count: {count} Timer: {timer.elapsed}s")
+            print(f"Count: {count} Errors: {errors} Timer: {timer.elapsed}s "
+                  f"Avg: {timer.elapsed/count}")
     return
 
 
