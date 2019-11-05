@@ -84,10 +84,16 @@ def migrate_redis(prefix, source, destination):
     src = connect_to_redis(source)
     dst = connect_to_redis(destination)
 
-    timer = pytool.time.Timer()
     count = 0
     errors = 0
-    for key in src.keys(prefix):
+    time_keys = pytool.time.Timer()
+    keys = src.keys(prefix)
+    key_count = len(keys)
+
+    print(f"Time to retrieve keys: {time_keys.elapsed}")
+
+    timer = pytool.time.Timer()
+    for key in keys:
         count += 1
         ttl = src.ttl(key)
 
@@ -114,8 +120,11 @@ def migrate_redis(prefix, source, destination):
             print("Error: " + str(e))
             pass
         if not count % 1000:
+            avg = timer.elapsed / count
+            remaining = 1.0 * timer.elapsed / count * (key_count - count)
+            remaining = remaining / 60.0
             print(f"Count: {count} Errors: {errors} Timer: {timer.elapsed}s "
-                  f"Avg: {timer.elapsed/count}")
+                  f"Avg: {avg} Remaining: {remaining}")
     return
 
 
