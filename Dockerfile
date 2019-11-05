@@ -6,4 +6,4 @@ COPY . .
 
 RUN pip install -r requirements.txt --compile
 
-ENTRYPOINT ["python", "/usr/src/app/redis-to-cluster.py"]
+ENTRYPOINT ["python", "/usr/src/app/main.py"]
