@@ -299,7 +299,7 @@ class Migrate:
         timer = pytool.time.Timer()
         self.dest_keys = self.dest.keys(self.prefix)
         self.log.info(f"Retrieve destination keys: {timer.elapsed}")
-        self.log.info(f"Found {len(self.src_keys)} destination keys.")
+        self.log.info(f"Found {len(self.dest_keys)} destination keys.")
 
     @property
     def src(self):
