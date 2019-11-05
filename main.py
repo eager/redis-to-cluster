@@ -156,7 +156,7 @@ class Metrics:
         elapsed = round(elapsed / 60.0, 1)
 
         sys.stderr.write(f"{self.prefix}: {avg}ms, {elapsed}min passed, "
-                         f"{remaining}min remaining.")
+                         f"{remaining}min remaining. ({count:,}/{total:,}")
 
 
 class Worker(threading.Thread):
@@ -256,7 +256,7 @@ class Migrate:
         timer.mark()
         self.keys = set(self.src_keys) - set(self.dest_keys)
         self.log.debug(f"Time to compute set: {timer.mark()}")
-        self.log.info(f"Keys to process: {len(self.keys)}")
+        self.log.info(f"Keys to process: {len(self.keys):,}")
 
         # Populate the threadsafe queue with keys
         for key in self.keys:
@@ -295,7 +295,7 @@ class Migrate:
         self.log.info("Querying source keys.")
         self.src_keys = self.src.keys(self.prefix)
         self.log.info(f"Retrieve source keys: {timer.elapsed}")
-        self.log.info(f"Found {len(self.src_keys)} source keys.")
+        self.log.info(f"Found {len(self.src_keys):,} source keys.")
 
     def get_dest_keys(self):
         """ Populate the destination keys from a thread. """
@@ -303,7 +303,7 @@ class Migrate:
         self.log.info("Querying destination keys.")
         self.dest_keys = self.dest.keys(self.prefix)
         self.log.info(f"Retrieve destination keys: {timer.elapsed}")
-        self.log.info(f"Found {len(self.dest_keys)} destination keys.")
+        self.log.info(f"Found {len(self.dest_keys):,} destination keys.")
 
     @property
     def src(self):
