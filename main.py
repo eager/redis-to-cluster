@@ -156,8 +156,8 @@ class Metrics:
         # Time taken in minutes
         elapsed = round(elapsed / 60.0, 1)
 
-        self.log.info(f"{self.prefix}: {avg}ms, {elapsed}min passed, "
-                      f"{remaining}min remaining. ({count:,}/{total:,}")
+        self.log.info(f"{self.prefix}: {avg}ms avg, {elapsed}min passed, "
+                      f"{remaining}min remaining. ({count:,}/{total:,})")
 
 
 class Worker(threading.Thread):
