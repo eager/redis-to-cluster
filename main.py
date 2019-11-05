@@ -11,7 +11,8 @@ quiet = False  # verbose unless quiet logging global
 
 
 def debug(msg):
-    sys.stderr.write(msg + "\n")
+    if not quiet:
+        sys.stderr.write(msg + "\n")
     # sys.stderr.flush()
 
 
