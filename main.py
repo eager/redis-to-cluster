@@ -128,6 +128,7 @@ class Metrics:
         self.lock = threading.Lock()
         self.copied = 0
         self.errored = 0
+        self.log = Logger()
         self.timer = pytool.time.Timer()
 
     def count(self):
@@ -155,8 +156,8 @@ class Metrics:
         # Time taken in minutes
         elapsed = round(elapsed / 60.0, 1)
 
-        sys.stderr.write(f"{self.prefix}: {avg}ms, {elapsed}min passed, "
-                         f"{remaining}min remaining. ({count:,}/{total:,}")
+        self.log.info(f"{self.prefix}: {avg}ms, {elapsed}min passed, "
+                      f"{remaining}min remaining. ({count:,}/{total:,}")
 
 
 class Worker(threading.Thread):
