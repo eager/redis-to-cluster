@@ -219,11 +219,13 @@ class Migrate:
     _src = None
     _dest = None
 
-    def __init__(self, prefix, source, destination, workers=10):
+    def __init__(self, prefix, source, destination, workers=10,
+                 overwrite=False):
         self.prefix = prefix
         self.source_url = source
         self.dest_url = destination
         self.workers = workers
+        self.overwrite = overwrite
         self.queue = queue.Queue()
         self.log = Logger()
 
@@ -242,9 +244,12 @@ class Migrate:
         self.log.info(f"Time to retrieve keys: {timer.elapsed}s")
 
         # Find the difference in the destination keys
-        timer.mark()
-        self.keys = set(self.src_keys) - set(self.dest_keys)
-        self.log.info(f"Time to compute set: {timer.mark()}s")
+        if not self.ovewrite:
+            timer.mark()
+            self.keys = set(self.src_keys) - set(self.dest_keys)
+            self.log.info(f"Time to compute set: {timer.mark()}s")
+        else:
+            self.keys = set(self.src_keys)
         self.log.info(f"Keys to process: {len(self.keys)}")
 
         # Populate the threadsafe queue with keys
@@ -311,6 +316,8 @@ class Main(pytool.cmd.Command):
         self.opt('--logging', '-l', default='info',
                  choices=['debug', 'info', 'error'],
                  help="Set log level")
+        self.opt('--overwrite', action='store_true',
+                 help="Overwrite keys instead of skipping existing")
         self.opt('--logfile', '-f', type=str, help="Log to file")
         self.opt('--prefix', '-p', default="*", help="source key prefix ")
 
@@ -320,7 +327,8 @@ class Main(pytool.cmd.Command):
         self.log.debug("Logging configured successfully.")
 
         migrate = Migrate(self.args.prefix, self.args.source,
-                          self.args.destination, self.args.workers)
+                          self.args.destination, self.args.workers,
+                          self.args.overwrite)
         self.log.debug("Created migration runner.")
         migrate.run()
 
