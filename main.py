@@ -263,7 +263,7 @@ class Migrate:
             self.queue.put(key)
 
         self.log.debug(f"Time to populate queue: {timer.mark()}")
-        self.log.info(f"Keys in queue: {len(self.queue)}")
+        self.log.info(f"Keys in queue: {self.queue.qsize()}")
 
         # Create metrics
         self.metrics = Metrics(self.prefix, len(self.keys))
@@ -276,10 +276,12 @@ class Migrate:
         self.log.info(f"Time to create workers: {timer.mark()}")
 
         # Start all the worker threads
+        self.log.info("Starting workers.")
         for worker in self.pool:
             worker.start()
 
         # Wait for workers to finish
+        self.log.info("Processing.")
         for worker in self.pool:
             worker.join()
 
