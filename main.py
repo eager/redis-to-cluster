@@ -258,13 +258,14 @@ class Migrate:
         self.keys = set(self.src_keys) - set(self.dest_keys)
         self.log.debug(f"Time to compute set: {timer.mark()}")
         self.log.info(f"Keys to process: {len(self.keys):,}")
+        self.log.info("Populating queue.")
 
         # Populate the threadsafe queue with keys
         for key in self.keys:
             self.queue.put(key)
 
         self.log.debug(f"Time to populate queue: {timer.mark()}")
-        self.log.info(f"Keys in queue: {self.queue.qsize()}")
+        self.log.debug(f"Keys in queue: {self.queue.qsize():,}")
 
         # Create metrics
         self.metrics = Metrics(self.prefix, len(self.keys))
@@ -274,7 +275,7 @@ class Migrate:
         self.log.debug(f"Creating {self.workers} workers.")
         self.pool = [Worker(self.queue, self.src, self.dest, self.log)
                      for i in range(self.workers)]
-        self.log.info(f"Time to create workers: {timer.mark()}")
+        self.log.debug(f"Time to create workers: {timer.mark()}")
 
         # Start all the worker threads
         self.log.info("Starting workers.")
