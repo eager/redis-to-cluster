@@ -325,12 +325,48 @@ class Migrate:
         return self._dest
 
 
+class DeleteWorker(threading.Thread):
+    def __init__(self, key_queue, dest, log):
+        self.queue = key_queue
+        self.dest = dest
+        self.log = log
+        super().__init__()
+
+    def run(self):
+        """ Consume the *key_queue*, migrating keys. """
+        metrics = Metrics()
+
+        count = 0
+        while not self.queue.empty():
+            count += 1
+            try:
+                key = self.queue.get(timeout=1)
+            except queue.Empty:
+                continue
+
+            try:
+                self.delete_key(key)
+                metrics.count()
+            except Exception as err:
+                self.log.error(f"Error for key '{key}'")
+                self.log.debug(err, exc_info=True)
+                metrics.error()
+
+        self.log.info(f"Thread completed. {count} keys processed.")
+
+    def delete_key(self, key):
+        """ Delete the key from the destination. """
+        self.dest.delete(key)
+
+
 class Delete:
     _dest = None
 
-    def __init__(self, prefix, destination):
+    def __init__(self, prefix, destination, workers=10):
         self.prefix = prefix
         self.dest_url = destination
+        self.queue = queue.Queue()
+        self.workers = workers
         self.log = Logger()
 
     def run(self):
@@ -338,11 +374,14 @@ class Delete:
             self.log.error("Cowardly refusing to delete everything.")
             sys.exit(1)
 
+        timer = pytool.time.Timer()
+
         # Get all our keys
         keys = self.dest.keys(self.prefix)
 
+        self.debug.info(f"Time to retrieve keys: {timer.mark()}")
+
         total = len(keys)
-        count = 0
 
         self.log.info(f"Running DELETE against '{self.prefix}' "
                       f"{self.dest_url}")
@@ -350,30 +389,45 @@ class Delete:
         sample = '\n  '.join(str(k) for k in keys[:10])
         self.log.info(f"Sample keys:\n  {sample}")
         self.log.info("Kill this process now if you don't want to proceed.\n"
-                      "   ... Sleeping for 30 seconds while you decide.")
+                      "   ... Sleeping for 10 seconds while you decide.")
 
-        time.sleep(30)
-        timer = pytool.time.Timer()
+        time.sleep(10)
+
+        timer.mark()
+        self.log.info("Populating queue.")
 
         # Delete all the keys one by one...
         for key in keys:
-            count += 1
-            self.dest.delete(key)
+            self.queue.put(key)
 
-            if not count % 10000:
-                elapsed = timer.elapsed.total_seconds()
-                # Time per key in milliseconds
-                avg = round(elapsed / count * 1000, 3)
-                # Time remaining in seconds
-                remaining = 1.0 * elapsed / count * (total - count)
-                # Time remaining in minutes
-                remaining = round(remaining / 60.0, 1)
-                # Time taken in minutes
-                elapsed = round(elapsed / 60.0, 1)
+        self.log.debug(f"Time to populate queue: {timer.mark()}")
+        self.log.debug(f"Keys in queue: {self.queue.qsize():,}")
 
-                self.log.info(f"{self.prefix}: {avg}ms avg, {elapsed}min "
-                              f"passed, {remaining}min remaining. "
-                              f"({count:,}/{total:,})")
+        # Create metrics
+        self.metrics = Metrics(self.prefix, len(self.keys))
+
+        # Create worker threadpool
+        timer.mark()
+        self.log.debug(f"Creating {self.workers} workers.")
+        self.pool = [DeleteWorker(self.queue, self.dest, self.log)
+                     for i in range(self.workers)]
+        self.log.debug(f"Time to create workers: {timer.mark()}")
+
+        # Start all the worker threads
+        self.log.info("Starting workers.")
+        for worker in self.pool:
+            worker.start()
+
+        self.log.info(f"Startup time: {timer.elapsed}")
+
+        # Wait for workers to finish
+        self.log.info("Processing.")
+        for worker in self.pool:
+            worker.join()
+
+        self.log.info(f"Copy time: {timer.mark()}")
+        self.log.info(f"Total time taken: {timer.elapsed}")
+        self.log.info(f"Total keys deleted: {len(self.keys)}")
 
         self.log.info("Finished.")
 
