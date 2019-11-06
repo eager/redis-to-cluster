@@ -108,6 +108,12 @@ class Logger:
         self.info = self.logger.info
         self.debug = self.logger.debug
         self.error = self.logger.error
+        self.ttl_log = open('ttl.log', 'wa')
+        self.ttl_lock = threading.Lock()
+
+    def ttl(self, key):
+        with self.ttl_lock:
+            self.ttl_log.write(key + '\n')
 
 
 @pytool.lang.singleton
@@ -195,6 +201,7 @@ class Worker(threading.Thread):
         if ttl == -1:
             # self.log.debug(f"TTL -1: {key}")
             ttl = 60*60*24*90
+            self.log.ttl(key)
 
         # restore uses TTL in ms
         ttl = ttl * 1000
