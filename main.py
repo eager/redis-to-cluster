@@ -108,7 +108,7 @@ class Logger:
         self.info = self.logger.info
         self.debug = self.logger.debug
         self.error = self.logger.error
-        self.ttl_log = open('ttl.log', 'wa')
+        self.ttl_log = open('ttl.log', 'a')
         self.ttl_lock = threading.Lock()
 
     def ttl(self, key):
