@@ -13,12 +13,6 @@ import rediscluster
 quiet = False  # verbose unless quiet logging global
 
 
-def debug(msg):
-    if not quiet:
-        sys.stderr.write(msg + "\n")
-    # sys.stderr.flush()
-
-
 def connect_redis(conn):
     """ Return a redis client. """
     # Don't pass empty password to the client
@@ -121,7 +115,7 @@ class Logger:
 
 @pytool.lang.singleton
 class Metrics:
-    def __init__(self, prefix, total, frequency=10000):
+    def __init__(self, prefix, total, frequency=25000):
         self.prefix = prefix
         self.total = total
         self.frequency = frequency
