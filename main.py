@@ -347,7 +347,7 @@ class Delete:
         self.log.info(f"Running DELETE against '{self.prefix}' "
                       f"{self.dest_url}")
         self.log.info(f"There are {total:,} keys to delete.")
-        sample = '  \n'.join(str(k) for k in keys[:10])
+        sample = '\n  '.join(str(k) for k in keys[:10])
         self.log.info(f"Sample keys:\n  {sample}")
         self.log.info("Kill this process now if you don't want to proceed.\n"
                       "   ... Sleeping for 30 seconds while you decide.")
