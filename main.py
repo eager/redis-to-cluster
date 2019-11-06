@@ -338,17 +338,21 @@ class Delete:
             self.log.error("Cowardly refusing to delete everything.")
             sys.exit(1)
 
-        self.log.info(f"Running DELETE against '{self.prefix}' "
-                      f"{self.dest_url}")
-        self.log.info("Kill this process now if you don't want to proceed.\n"
-                      "   ... Sleeping for 30 seconds while you decide.")
-        time.sleep(30)
-
         # Get all our keys
         keys = self.dest.keys(self.prefix)
 
         total = len(keys)
         count = 0
+
+        self.log.info(f"Running DELETE against '{self.prefix}' "
+                      f"{self.dest_url}")
+        self.log.info(f"There are {total:,} keys to delete.")
+        sample = '  \n'.join(keys[:10])
+        self.log.info(f"Sample keys:\n  {sample}")
+        self.log.info("Kill this process now if you don't want to proceed.\n"
+                      "   ... Sleeping for 30 seconds while you decide.")
+
+        time.sleep(30)
         timer = pytool.time.Timer()
 
         # Delete all the keys one by one...
