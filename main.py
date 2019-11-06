@@ -113,7 +113,7 @@ class Logger:
 
     def ttl(self, key):
         with self.ttl_lock:
-            self.ttl_log.write(key + '\n')
+            self.ttl_log.write(str(key) + '\n')
 
 
 @pytool.lang.singleton
