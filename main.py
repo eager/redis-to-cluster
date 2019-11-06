@@ -332,12 +332,44 @@ class Delete:
         self.log = Logger()
 
     def run(self):
-        self.log.info(f"Running FLUSHALL against {self.dest_url}")
+        if not self.prefix or self.prefix == '*':
+            self.log.error("Cowardly refusing to delete everything.")
+            sys.exit(1)
+
+        self.log.info(f"Running FLUSHALL against '{self.prefix}' "
+                      f"{self.dest_url}")
         self.log.info("Kill this process now if you don't want to proceed.\n"
                       "   ... Sleeping for 30 seconds while you decide.")
         time.sleep(30)
 
-        self.dest.flushall(self.prefix)
+        # Get all our keys
+        keys = self.dest.keys(self.prefix)
+
+        total = len(keys)
+        count = 0
+        timer = pytool.time.Timer()
+
+        # Delete all the keys one by one...
+        for key in keys:
+            count += 1
+            self.dest.delete(key)
+
+            if not count % 10000:
+                elapsed = timer.elapsed.total_seconds()
+                # Time per key in milliseconds
+                avg = round(elapsed / count * 1000, 3)
+                # Time remaining in seconds
+                remaining = 1.0 * elapsed / count * (total - count)
+                # Time remaining in minutes
+                remaining = round(remaining / 60.0, 1)
+                # Time taken in minutes
+                elapsed = round(elapsed / 60.0, 1)
+
+                self.log.info(f"{self.prefix}: {avg}ms avg, {elapsed}min "
+                              f"passed, {remaining}min remaining. "
+                              f"({count:,}/{total:,})")
+
+        self.log.info("Finished.")
 
     @property
     def dest(self):
