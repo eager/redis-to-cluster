@@ -1,5 +1,6 @@
 import re
 import sys
+import time
 import queue
 import logging
 import argparse
@@ -324,6 +325,33 @@ class Migrate:
         return self._dest
 
 
+class Delete:
+    def __init__(self, prefix, destination):
+        self.prefix = prefix
+        self.dest_url = destination
+        self.log = Logger()
+
+    def run(self):
+        self.log.info(f"Running FLUSHALL against {self.dest_url}")
+        self.log.info("Kill this process now if you don't want to proceed.\n"
+                      "   ... Sleeping for 30 seconds while you decide.")
+        time.sleep(30)
+
+        self.dest.flushall(self.prefix)
+
+    @property
+    def dest(self):
+        """ Return a cached client connection object. """
+        if self._dest:
+            return self._dest
+
+        # Parse and create a new client
+        conn = parse_url(self.dest_url)
+        client = get_client(conn)
+        self._dest = client
+        return self._dest
+
+
 class Main(pytool.cmd.Command):
     def set_opts(self):
         self.describe("Simple script to migrate Redis database key data, in a "
@@ -339,6 +367,8 @@ class Main(pytool.cmd.Command):
                  help="Set log level")
         self.opt('--overwrite', action='store_true',
                  help="Overwrite keys instead of skipping existing")
+        self.opt('--delete-dest', action='store_true',
+                 help="Do not migrate, delete destination keys")
         self.opt('--logfile', '-f', type=str, help="Log to file")
         self.opt('--prefix', '-p', default="*", help="source key prefix ")
 
@@ -348,6 +378,11 @@ class Main(pytool.cmd.Command):
         self.log.debug("Logging configured successfully.")
 
         self.log.info(f"Using prefix: {self.args.prefix}")
+
+        if self.args.delete_dest:
+            deleter = Delete(self.args.prefix, self.args.destination)
+            deleter.run()
+            return
 
         migrate = Migrate(self.args.prefix, self.args.source,
                           self.args.destination, self.args.workers,
