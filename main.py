@@ -379,7 +379,7 @@ class Delete:
         # Get all our keys
         keys = self.dest.keys(self.prefix)
 
-        self.debug.info(f"Time to retrieve keys: {timer.mark()}")
+        self.log.info(f"Time to retrieve keys: {timer.mark()}")
 
         total = len(keys)
 
