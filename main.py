@@ -10,9 +10,6 @@ import pytool
 import rediscluster
 
 
-quiet = False  # verbose unless quiet logging global
-
-
 def connect_redis(conn):
     """ Return a redis client. """
     # Don't pass empty password to the client
