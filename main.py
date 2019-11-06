@@ -69,8 +69,7 @@ def parse_url(url):
         host = re.search('://(:.*@)*(.*):', url).group(2)
         port = re.search('://(:.*@)*.*:(.*)/', url).group(2)
     except Exception:
-        raise argparse.ArgumentTypeError('incorrect format, should be: %s'
-                                         % expected)
+        raise argparse.ArgumentTypeError(f'URL format: {expected}')
 
     # Toggle SSL if we have a secure schema
     ssl = (schema == 'rediss')
@@ -78,14 +77,14 @@ def parse_url(url):
     # Parse the database number from the connection string
     db = re.search(r':.*/(\d+$)', url)
     if db is None:
-        debug('INFO: Using cluster mode for %s' % host)
+        Logger().info(f'Using cluster mode for {host}')
     else:
         db = db.group(1)
 
     # Parse the password from the connection string
     password = re.search('://:(.*)@', url)
     if password is None:
-        debug('INFO: No password set for %s' % host)
+        Logger().info(f'No password set for {host}')
     else:
         password = password.group(1)
 
