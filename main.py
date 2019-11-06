@@ -326,6 +326,8 @@ class Migrate:
 
 
 class Delete:
+    _dest = None
+
     def __init__(self, prefix, destination):
         self.prefix = prefix
         self.dest_url = destination
@@ -336,7 +338,7 @@ class Delete:
             self.log.error("Cowardly refusing to delete everything.")
             sys.exit(1)
 
-        self.log.info(f"Running FLUSHALL against '{self.prefix}' "
+        self.log.info(f"Running DELETE against '{self.prefix}' "
                       f"{self.dest_url}")
         self.log.info("Kill this process now if you don't want to proceed.\n"
                       "   ... Sleeping for 30 seconds while you decide.")
