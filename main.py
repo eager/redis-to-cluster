@@ -404,7 +404,7 @@ class Delete:
         self.log.debug(f"Keys in queue: {self.queue.qsize():,}")
 
         # Create metrics
-        self.metrics = Metrics(self.prefix, len(self.keys))
+        self.metrics = Metrics(self.prefix, total)
 
         # Create worker threadpool
         timer.mark()
