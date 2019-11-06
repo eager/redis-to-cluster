@@ -472,7 +472,8 @@ class Main(pytool.cmd.Command):
         self.log.info(f"Using prefix: {self.args.prefix}")
 
         if self.args.delete_dest:
-            deleter = Delete(self.args.prefix, self.args.destination)
+            deleter = Delete(self.args.prefix, self.args.destination,
+                             self.args.workers)
             deleter.run()
             return
 
