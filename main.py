@@ -427,7 +427,7 @@ class Delete:
 
         self.log.info(f"Copy time: {timer.mark()}")
         self.log.info(f"Total time taken: {timer.elapsed}")
-        self.log.info(f"Total keys deleted: {len(self.keys)}")
+        self.log.info(f"Total keys deleted: {total}")
 
         self.log.info("Finished.")
 
