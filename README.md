@@ -193,6 +193,30 @@ stdout.
 
 This will display the command line help and exit.
 
+```
+$ docker run shakefu/redis-to-cluster --help
+usage: main.py --source SOURCE --destination DESTINATION [--workers WORKERS]
+               [--logging {debug,info,error}] [--overwrite] [--delete-dest]
+               [--logfile LOGFILE] [--prefix PREFIX] [--help]
+
+Simple script to migrate Redis database key data, in a non destructive way.
+
+optional arguments:
+  --source SOURCE, -s SOURCE            source Redis server / cluster
+  --destination DESTINATION, -d DESTINATION
+                                        destination Redis server / cluster
+  --workers WORKERS, -w WORKERS         Number of workers
+  --logging {debug,info,error}, -l {debug,info,error}
+                                        Set log level
+  --overwrite                           Overwrite keys instead of skipping
+                                        existing
+  --delete-dest                         Do not migrate, delete destination
+                                        keys
+  --logfile LOGFILE, -f LOGFILE         Log to file
+  --prefix PREFIX, -p PREFIX            source key prefix
+  --help                                display this help and exit
+```
+
 ## Credits
 
 Forked from
