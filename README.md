@@ -17,6 +17,103 @@ Features:
 - Missing TTL correction
 - Metrics and time estimation
 
+## Example output
+
+This is a sanitized example of the output produced by this script, including
+the command to run it, and an exception during copying.
+
+```
+ubuntu@redis-util:~$ docker run -it --rm --name redis-util6 -v "$PWD/ttl.log:/usr/src/app/ttl.log" \
+    shakefu/redis-to-cluster --workers 15 --prefix 'spring:*' --logging debug \
+    --source redis://redis-example.cache.amazonaws.com:6379/0 \
+    --destination rediss://:password@redis-cluster-example.cache.amazonaws.com:6379/
+2019-11-06 22:24:02,274 [DEBUG] Logging configured successfully.
+2019-11-06 22:24:02,274 [INFO] Using prefix: spring:*
+2019-11-06 22:24:02,274 [DEBUG] Created migration runner.
+prefix = spring:*
+workers = 15
+overwrite = False
+2019-11-06 22:24:02,274 [INFO] Starting migration.
+2019-11-06 22:24:02,274 [INFO] Querying source keys.
+2019-11-06 22:24:02,274 [INFO] No password set for redis-example.cache.amazonaws.com
+2019-11-06 22:24:02,275 [INFO] Querying destination keys.
+2019-11-06 22:24:02,275 [INFO] Using cluster mode for redis-cluster-example.cache.amazonaws.com
+2019-11-06 22:26:02,507 [INFO] Retrieve source keys: 0:02:00.232611
+2019-11-06 22:26:02,507 [INFO] Found 29,157,514 source keys.
+2019-11-06 22:29:30,343 [INFO] Retrieve destination keys: 0:05:28.067949
+2019-11-06 22:29:30,343 [INFO] Found 28,567,223 destination keys.
+2019-11-06 22:29:30,343 [INFO] Time to retrieve keys: 0:05:28.069108
+2019-11-06 22:29:52,413 [DEBUG] Time to compute set: 0:00:22.070054
+2019-11-06 22:29:52,413 [INFO] Keys to process: 592,530
+2019-11-06 22:29:52,413 [INFO] Populating queue.
+2019-11-06 22:29:53,459 [DEBUG] Time to populate queue: 0:00:01.045916
+2019-11-06 22:29:53,459 [DEBUG] Keys in queue: 592,530
+2019-11-06 22:29:53,459 [DEBUG] Creating 15 workers.
+2019-11-06 22:29:53,459 [DEBUG] Time to create workers: 0:00:00.000158
+2019-11-06 22:29:53,459 [INFO] Starting workers.
+2019-11-06 22:29:55,403 [INFO] Startup time: 0:05:53.129592
+2019-11-06 22:29:55,404 [INFO] Processing.
+2019-11-06 22:29:59,922 [INFO] spring:*: 0.259ms avg, 0.1min passed, 2.4min remaining. (25,000/592,530)
+2019-11-06 22:30:04,456 [INFO] spring:*: 0.22ms avg, 0.2min passed, 2.0min remaining. (50,000/592,530)
+2019-11-06 22:30:08,974 [INFO] spring:*: 0.207ms avg, 0.3min passed, 1.8min remaining. (75,000/592,530)
+2019-11-06 22:30:13,434 [INFO] spring:*: 0.2ms avg, 0.3min passed, 1.6min remaining. (100,000/592,530)
+2019-11-06 22:30:17,947 [INFO] spring:*: 0.196ms avg, 0.4min passed, 1.5min remaining. (125,000/592,530)
+2019-11-06 22:30:22,475 [INFO] spring:*: 0.193ms avg, 0.5min passed, 1.4min remaining. (150,000/592,530)
+2019-11-06 22:30:30,159 [INFO] spring:*: 0.21ms avg, 0.6min passed, 1.5min remaining. (175,000/592,530)
+2019-11-06 22:30:34,644 [INFO] spring:*: 0.206ms avg, 0.7min passed, 1.3min remaining. (200,000/592,530)
+2019-11-06 22:30:39,124 [INFO] spring:*: 0.203ms avg, 0.8min passed, 1.2min remaining. (225,000/592,530)
+2019-11-06 22:30:43,677 [INFO] spring:*: 0.201ms avg, 0.8min passed, 1.1min remaining. (250,000/592,530)
+2019-11-06 22:30:48,156 [INFO] spring:*: 0.199ms avg, 0.9min passed, 1.1min remaining. (275,000/592,530)
+2019-11-06 22:30:52,635 [INFO] spring:*: 0.197ms avg, 1.0min passed, 1.0min remaining. (300,000/592,530)
+2019-11-06 22:30:57,196 [INFO] spring:*: 0.196ms avg, 1.1min passed, 0.9min remaining. (325,000/592,530)
+2019-11-06 22:31:01,669 [INFO] spring:*: 0.195ms avg, 1.1min passed, 0.8min remaining. (350,000/592,530)
+2019-11-06 22:31:01,704 [ERROR] Error for key 'b'spring:session:expires:333f9f43-4b06-4252-8d7e-080c0aaaaaa''
+2019-11-06 22:31:01,705 [DEBUG] DUMP payload version or checksum are wrong
+Traceback (most recent call last):
+  File "/usr/src/app/main.py", line 181, in run
+    self.copy_key(key)
+  File "/usr/src/app/main.py", line 213, in copy_key
+    self.dest.restore(key, ttl, value, replace=True)
+  File "/usr/local/lib/python3.7/site-packages/redis/client.py", line 1138, in restore
+    return self.execute_command('RESTORE', *params)
+  File "/usr/local/lib/python3.7/site-packages/rediscluster/utils.py", line 101, in inner
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.7/site-packages/rediscluster/client.py", line 371, in execute_command
+    return self.parse_response(r, command, **kwargs)
+  File "/usr/local/lib/python3.7/site-packages/redis/client.py", line 680, in parse_response
+    response = connection.read_response()
+  File "/usr/local/lib/python3.7/site-packages/redis/connection.py", line 629, in read_response
+    raise response
+redis.exceptions.ResponseError: DUMP payload version or checksum are wrong
+2019-11-06 22:31:06,117 [INFO] spring:*: 0.194ms avg, 1.2min passed, 0.7min remaining. (375,001/592,530)
+2019-11-06 22:31:10,548 [INFO] spring:*: 0.193ms avg, 1.3min passed, 0.6min remaining. (400,001/592,530)
+2019-11-06 22:31:15,351 [INFO] spring:*: 0.193ms avg, 1.4min passed, 0.5min remaining. (425,001/592,530)
+2019-11-06 22:31:19,819 [INFO] spring:*: 0.192ms avg, 1.4min passed, 0.5min remaining. (450,001/592,530)
+2019-11-06 22:31:24,324 [INFO] spring:*: 0.191ms avg, 1.5min passed, 0.4min remaining. (475,001/592,530)
+2019-11-06 22:31:28,773 [INFO] spring:*: 0.191ms avg, 1.6min passed, 0.3min remaining. (500,001/592,530)
+2019-11-06 22:31:33,280 [INFO] spring:*: 0.19ms avg, 1.7min passed, 0.2min remaining. (525,001/592,530)
+2019-11-06 22:31:37,699 [INFO] spring:*: 0.19ms avg, 1.7min passed, 0.1min remaining. (550,001/592,530)
+2019-11-06 22:31:42,238 [INFO] spring:*: 0.189ms avg, 1.8min passed, 0.1min remaining. (575,001/592,530)
+2019-11-06 22:31:45,353 [INFO] Thread completed. 39499 keys processed.
+2019-11-06 22:31:45,353 [INFO] Thread completed. 39530 keys processed.
+2019-11-06 22:31:45,354 [INFO] Thread completed. 39678 keys processed.
+2019-11-06 22:31:45,354 [INFO] Thread completed. 39157 keys processed.
+2019-11-06 22:31:45,354 [INFO] Thread completed. 39488 keys processed.
+2019-11-06 22:31:45,354 [INFO] Thread completed. 39495 keys processed.
+2019-11-06 22:31:45,354 [INFO] Thread completed. 39543 keys processed.
+2019-11-06 22:31:45,354 [INFO] Thread completed. 39516 keys processed.
+2019-11-06 22:31:45,354 [INFO] Thread completed. 39546 keys processed.
+2019-11-06 22:31:45,354 [INFO] Thread completed. 39543 keys processed.
+2019-11-06 22:31:45,355 [INFO] Thread completed. 39478 keys processed.
+2019-11-06 22:31:45,355 [INFO] Thread completed. 39475 keys processed.
+2019-11-06 22:31:45,355 [INFO] Thread completed. 39653 keys processed.
+2019-11-06 22:31:45,355 [INFO] Thread completed. 39553 keys processed.
+2019-11-06 22:31:45,355 [INFO] Thread completed. 39376 keys processed.
+2019-11-06 22:31:45,356 [INFO] Copy time: 0:01:51.896510
+2019-11-06 22:31:45,356 [INFO] Total time taken: 0:07:43.082167
+2019-11-06 22:31:45,356 [INFO] Total keys migraterd: 592530
+```
+
 ## Installation
 
 This section describes how to install the redis-to-cluster script.
