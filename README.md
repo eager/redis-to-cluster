@@ -106,7 +106,7 @@ docker run -it --rm --name redis-del1 shakefu/redis-to-cluster --delete-dest \
 ### Redis URLs
 
 The provided *source* and *destination* Redis URLs must strictly conform to the
-Redis URI scheme. [1](http://www.iana.org/assignments/uri-schemes/prov/redis)
+Redis URI scheme. [\[1\]](http://www.iana.org/assignments/uri-schemes/prov/redis)
 
 The general format is `schema://(:password)@host:port/db`. The *schema* must be
 either `redis` or `rediss` for SSL. The *password* must be prefixed with a `:`
