@@ -6,7 +6,7 @@ ElastiCache Redis cluster.
 
 This has been tested against Python *3.7*.
 
-Features:
+**Features**:
 
 - Redis replica support
 - Redis Cluster Mode support
