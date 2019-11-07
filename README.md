@@ -76,7 +76,8 @@ Inside the container this log file will be located at `/usr/src/app/ttl.log`.
 To simply copy all keys with default arguments:
 
 ```bash
-docker run shakefu/redis-to-cluster --source redis://redis.example:6739/0 --destination redis://redis-new.example:6739/0
+docker run shakefu/redis-to-cluster --source redis://redis.example:6739/0 \
+    --destination redis://redis-new.example:6739/0
 ```
 
 To copy all keys matching `spring:*` from an open authentication Redis replica,
@@ -84,7 +85,10 @@ to an authenticated Redis cluster, on ElastiCache, while extracting the log of
 keys with no TTL, using 15 thread workers, with debug level output.
 
 ```bash
-docker run -it --rm --name redis-util1 -v "$PWD/ttl.log:/usr/src/app/ttl.log" shakefu/redis-to-cluster --workers 15 --prefix 'spring:*' --logging debug --source redis://redis-example.cache.amazonaws.com:6379/0 --destination rediss://:PASSWORD@redis-cluster-example.cache.amazonaws.com:6379/
+docker run -it --rm --name redis-util1 -v "$PWD/ttl.log:/usr/src/app/ttl.log" \
+    shakefu/redis-to-cluster --workers 15 --prefix 'spring:*' --logging debug \
+    --source redis://redis-example.cache.amazonaws.com:6379/0 \
+    --destination rediss://:PASSWORD@redis-cluster-example.cache.amazonaws.com:6379/
 ```
 
 To delete all keys matching `spring:*` from the destination Redis ElastiCache
@@ -92,7 +96,9 @@ cluster using 15 worker threads, with debug level logging. The *source*
 argument is required but not used for this operation.
 
 ```bash
-docker run -it --rm --name redis-del1 shakefu/redis-to-cluster --delete-dest --workers 15 --prefix 'spring:*' --logging debug --source redis://unused/0 --destination rediss://:PASSWORD@redis-cluster-example.cache.amazonaws.com:6379/
+docker run -it --rm --name redis-del1 shakefu/redis-to-cluster --delete-dest \
+    --workers 15 --prefix 'spring:*' --logging debug --source redis://unused/0 \
+    --destination rediss://:PASSWORD@redis-cluster-example.cache.amazonaws.com:6379/
 ```
 
 *TODO: More useful examples.*
