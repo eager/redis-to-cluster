@@ -504,7 +504,8 @@ class Main(pytool.cmd.Command):
         self.log.debug(f"Created migration runner.\n"
                        f"prefix = {self.args.prefix}\n"
                        f"workers = {self.args.workers}\n"
-                       f"overwrite = {self.args.overwrite}")
+                       f"overwrite = {self.args.overwrite}\n"
+                       f"scan = ${self.args.scan}")
         migrate.run()
 
 
