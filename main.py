@@ -481,7 +481,8 @@ class Main(pytool.cmd.Command):
                  help="Do not migrate, delete destination keys")
         self.opt('--logfile', '-f', type=str, help="Log to file")
         self.opt('--prefix', '-p', default="*", help="source key prefix ")
-        self.opt('--scan', action='store_true', help="Use scan() to query keys")
+        self.opt('--scan', action='store_true',
+                 help="Use scan() to query keys")
 
     def run(self):
         self.log = Logger(getattr(logging, self.args.logging.upper()),
