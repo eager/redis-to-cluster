@@ -290,7 +290,7 @@ class Migrate:
 
         self.log.info(f"Copy time: {timer.mark()}")
         self.log.info(f"Total time taken: {timer.elapsed}")
-        self.log.info(f"Total keys migraterd: {len(self.keys)}")
+        self.log.info(f"Total keys migrated: {len(self.keys)}")
 
     def get_src_keys(self):
         """ Populate the src keys from a thread. """
