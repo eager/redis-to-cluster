@@ -219,7 +219,7 @@ class Migrate:
     _dest = None
 
     def __init__(self, prefix, source, destination, workers=10,
-                 overwrite=False):
+                 overwrite=False, scan=False):
         self.prefix = prefix
         self.source_url = source
         self.dest_url = destination
@@ -229,6 +229,7 @@ class Migrate:
         self.log = Logger()
         self.src_keys = set()
         self.dest_keys = set()
+        self.scan = scan
 
     def run(self):
         self.log.info("Starting migration.")
@@ -289,13 +290,18 @@ class Migrate:
 
         self.log.info(f"Copy time: {timer.mark()}")
         self.log.info(f"Total time taken: {timer.elapsed}")
-        self.log.info(f"Total keys migraterd: {len(self.keys)}")
+        self.log.info(f"Total keys migrated: {len(self.keys)}")
 
     def get_src_keys(self):
         """ Populate the src keys from a thread. """
         timer = pytool.time.Timer()
         self.log.info("Querying source keys.")
-        self.src_keys = self.src.keys(self.prefix)
+
+        if self.scan:
+            self.src_keys = [x for x in self.src.scan_iter(self.prefix)]
+        else:
+            self.src_keys = self.src.keys(self.prefix)
+
         self.log.info(f"Retrieve source keys: {timer.elapsed}")
         self.log.info(f"Found {len(self.src_keys):,} source keys.")
 
@@ -303,7 +309,12 @@ class Migrate:
         """ Populate the destination keys from a thread. """
         timer = pytool.time.Timer()
         self.log.info("Querying destination keys.")
-        self.dest_keys = self.dest.keys(self.prefix)
+
+        if self.scan:
+            self.dest_keys = [x for x in self.dest.scan_iter(self.prefix)]
+        else:
+            self.dest_keys = self.dest.keys(self.prefix)
+
         self.log.info(f"Retrieve destination keys: {timer.elapsed}")
         self.log.info(f"Found {len(self.dest_keys):,} destination keys.")
 
@@ -470,6 +481,8 @@ class Main(pytool.cmd.Command):
                  help="Do not migrate, delete destination keys")
         self.opt('--logfile', '-f', type=str, help="Log to file")
         self.opt('--prefix', '-p', default="*", help="source key prefix ")
+        self.opt('--scan', action='store_true',
+                 help="Use scan() to query keys")
 
     def run(self):
         self.log = Logger(getattr(logging, self.args.logging.upper()),
@@ -486,11 +499,13 @@ class Main(pytool.cmd.Command):
 
         migrate = Migrate(self.args.prefix, self.args.source,
                           self.args.destination, self.args.workers,
-                          self.args.overwrite)
+                          self.args.overwrite,
+                          self.args.scan)
         self.log.debug(f"Created migration runner.\n"
                        f"prefix = {self.args.prefix}\n"
                        f"workers = {self.args.workers}\n"
-                       f"overwrite = {self.args.overwrite}")
+                       f"overwrite = {self.args.overwrite}\n"
+                       f"scan = ${self.args.scan}")
         migrate.run()
 
 
